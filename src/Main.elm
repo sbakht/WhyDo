@@ -30,9 +30,9 @@ init =
     ( { tasks = Dict.empty, adding = "", lastID = 0, random = [] }, Cmd.none )
 
 
-addTask : Task -> TaskList -> TaskList
-addTask task list =
-    Dict.insert task.id task list
+addTask : (Task, Int) -> TaskList -> TaskList
+addTask (task, depOf) list =
+    Dict.update depOf ( Maybe.map (\x -> Task x.id x.text x.delay task.id) ) <| Dict.insert task.id task list
 
 
 type alias Task =
@@ -42,12 +42,12 @@ type alias Task =
 type alias TaskList =
     Dict Int Task
 
-mkTask : Int -> String -> Int -> Task
+mkTask : Int -> String -> Int -> (Task, Int)
 mkTask id text delay = case String.split "#" text of
     [words, dep] ->
-        Task id text delay (withDefault 0 <| toInt dep)
+        (Task id words delay 0, (withDefault 0 <| toInt dep))
     _ ->
-        Task id text delay 0
+        (Task id text delay 0, 0)
 
 ---- UPDATE ----
 
@@ -59,6 +59,7 @@ type Msg
     | Randomize (List Int)
     | GoRandom
 
+withoutDependency = Dict.filter (\_ task -> task.dependency == 0)
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
@@ -88,20 +89,20 @@ update msg model =
 
                 procrastinate : Int -> Task -> Task
                 procrastinate _ task =
-                    mkTask task.id task.text (task.delay + 1)
+                    Task task.id task.text (task.delay + 1) task.dependency
             in
-            ( { model | tasks = tasks }, Random.generate Randomize <| Random.list 10 <| Random.int 0 <| Dict.size tasks - 1 )
+            ( { model | tasks = tasks }, Random.generate Randomize <| Random.list 50 <| Random.int 0 <| Dict.size tasks - 1 )
 
         GoRandom ->
-            ( model, Random.generate Randomize <| Random.list 10 <| Random.int 0 <| Dict.size model.tasks - 1 )
+            ( model, Random.generate Randomize <| Random.list 50 <| Random.int 0 <| (\x -> Dict.size x - 1) <| withoutDependency model.tasks )
 
         Randomize arr ->
             let
                 random =
-                    getRandomIds <| Array.fromList <| Dict.keys model.tasks
+                    getRandomIds <| Array.fromList <| Dict.keys <| withoutDependency model.tasks
 
                 getRandomIds ids =
-                    catMaybes <| List.map (\i -> Array.get i ids) (take 3 <| unique arr)
+                    catMaybes <| List.map (\i -> Array.get i ids) (take 3 <| Debug.log "arr" <| unique arr)
             in
             ( { model | random = random }, Cmd.none )
 
