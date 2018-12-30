@@ -38,7 +38,10 @@ addTask ( task, depOf ) list =
 type alias Task =
     { id : Int, text : String, delay : Int, dependency : Int }
 
-type alias Dependency = Int
+
+type alias Dependency =
+    Int
+
 
 type alias TaskList =
     Dict Int Task
@@ -52,7 +55,6 @@ mkTask id text delay =
 
         _ ->
             ( Task id text delay 0, 0 )
-
 
 
 
@@ -82,7 +84,13 @@ update msg model =
                 ( model, Cmd.none )
 
             else
-                ( { model | tasks = addTask (mkTask (model.lastID + 1) model.adding 0) model.tasks, lastID = model.lastID + 1, adding = "" }, Cmd.none )
+                ( { model
+                    | tasks = addTask (mkTask (model.lastID + 1) model.adding 0) model.tasks
+                    , lastID = model.lastID + 1
+                    , adding = ""
+                  }
+                , Cmd.none
+                )
 
         CompleteTask id ->
             let
@@ -100,7 +108,7 @@ update msg model =
 
                 procrastinate : Int -> Task -> Task
                 procrastinate _ task =
-                    {task | delay = task.delay + 1}
+                    { task | delay = task.delay + 1 }
             in
             ( { model | tasks = tasks }, Random.generate Randomize <| Random.list 50 <| Random.int 0 <| Dict.size tasks - 1 )
 
@@ -113,7 +121,7 @@ update msg model =
                     getRandomIds <| Array.fromList <| Dict.keys <| withoutDependency model.tasks
 
                 getRandomIds ids =
-                    catMaybes <| List.map (\i -> Array.get i ids) (take 3 <| Debug.log "arr" <| unique arr)
+                    catMaybes <| List.map (\i -> Array.get i ids) (take 3 <| unique arr)
             in
             ( { model | random = random }, Cmd.none )
 
