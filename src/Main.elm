@@ -30,7 +30,7 @@ init =
     ( { tasks = Dict.empty, adding = "", lastID = 0, random = [] }, Cmd.none )
 
 
-addTask : ( Task, Int ) -> TaskList -> TaskList
+addTask : ( Task, Dependency ) -> TaskList -> TaskList
 addTask ( task, depOf ) list =
     Dict.update depOf (Maybe.map (\x -> Task x.id x.text x.delay task.id)) <| Dict.insert task.id task list
 
@@ -38,12 +38,13 @@ addTask ( task, depOf ) list =
 type alias Task =
     { id : Int, text : String, delay : Int, dependency : Int }
 
+type alias Dependency = Int
 
 type alias TaskList =
     Dict Int Task
 
 
-mkTask : Int -> String -> Int -> ( Task, Int )
+mkTask : Int -> String -> Int -> ( Task, Dependency )
 mkTask id text delay =
     case String.split "#" text of
         [ words, dep ] ->
@@ -51,6 +52,7 @@ mkTask id text delay =
 
         _ ->
             ( Task id text delay 0, 0 )
+
 
 
 
@@ -98,7 +100,7 @@ update msg model =
 
                 procrastinate : Int -> Task -> Task
                 procrastinate _ task =
-                    Task task.id task.text (task.delay + 1) task.dependency
+                    {task | delay = task.delay + 1}
             in
             ( { model | tasks = tasks }, Random.generate Randomize <| Random.list 50 <| Random.int 0 <| Dict.size tasks - 1 )
 
