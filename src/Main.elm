@@ -12,8 +12,9 @@ import Exts.Maybe exposing (catMaybes)
 import Html exposing (Html)
 import List exposing (take)
 import List.Extra exposing (unique)
+import Maybe exposing (withDefault)
 import Random
-import String exposing (fromInt)
+import String exposing (fromInt, toInt)
 
 
 
@@ -26,7 +27,7 @@ type alias Model =
 
 init : ( Model, Cmd Msg )
 init =
-    ( { tasks = Dict.empty, adding = "", lastID = 1, random = [] }, Cmd.none )
+    ( { tasks = Dict.empty, adding = "", lastID = 0, random = [] }, Cmd.none )
 
 
 addTask : Task -> TaskList -> TaskList
@@ -35,13 +36,18 @@ addTask task list =
 
 
 type alias Task =
-    { id : Int, text : String, delay : Int }
+    { id : Int, text : String, delay : Int, dependency: Int }
 
 
 type alias TaskList =
     Dict Int Task
 
-
+mkTask : Int -> String -> Int -> Task
+mkTask id text delay = case String.split "#" text of
+    [words, dep] ->
+        Task id text delay (withDefault 0 <| toInt dep)
+    _ ->
+        Task id text delay 0
 
 ---- UPDATE ----
 
@@ -61,7 +67,10 @@ update msg model =
             ( { model | adding = string }, Cmd.none )
 
         AddTask ->
-            ( { model | tasks = addTask (Task (model.lastID + 1) model.adding 0) model.tasks, lastID = model.lastID + 1, adding = "" }, Cmd.none )
+            if model.adding == "" then
+                (model, Cmd.none)
+            else
+                ( { model | tasks = addTask (mkTask (model.lastID + 1) model.adding 0 ) model.tasks, lastID = model.lastID + 1, adding = "" }, Cmd.none )
 
         CompleteTask id ->
             let
@@ -79,7 +88,7 @@ update msg model =
 
                 procrastinate : Int -> Task -> Task
                 procrastinate _ task =
-                    Task task.id task.text (task.delay + 1)
+                    mkTask task.id task.text (task.delay + 1)
             in
             ( { model | tasks = tasks }, Random.generate Randomize <| Random.list 10 <| Random.int 0 <| Dict.size tasks - 1 )
 
@@ -140,13 +149,16 @@ randomView ids list =
 
 tasksView : TaskList -> Element Msg
 tasksView list =
-    column [ centerX, Font.size 12, paddingXY 0 20 ] (Dict.foldl taskView [] list)
+    column [ centerX, Font.size 12, paddingXY 0 20 ] (Dict.foldl ghostView [] list)
 
 
 taskView : Int -> Task -> List (Element Msg) -> List (Element Msg)
 taskView _ task html =
     el [ onClick (CompleteTask task.id) ] (text <| fromInt task.delay ++ " " ++ task.text) :: html
 
+ghostView : Int -> Task -> List (Element Msg) -> List (Element Msg)
+ghostView _ task html =
+    el [ onClick (CompleteTask task.id) ] (text <| "ID: " ++ fromInt task.id ++ " " ++ fromInt task.delay ++ " " ++ task.text) :: html
 
 
 ---- PROGRAM ----
