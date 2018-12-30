@@ -110,7 +110,7 @@ update msg model =
                 procrastinate _ task =
                     { task | delay = task.delay + 1 }
             in
-            ( { model | tasks = tasks }, Random.generate Randomize <| Random.list 50 <| Random.int 0 <| Dict.size tasks - 1 )
+            ( { model | tasks = tasks }, Random.generate Randomize <| Random.list 50 <| Random.int 0 <| (\x -> Dict.size x - 1) <| withoutDependency tasks )
 
         GoRandom ->
             ( model, Random.generate Randomize <| Random.list 50 <| Random.int 0 <| (\x -> Dict.size x - 1) <| withoutDependency model.tasks )
