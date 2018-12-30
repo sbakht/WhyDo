@@ -30,24 +30,29 @@ init =
     ( { tasks = Dict.empty, adding = "", lastID = 0, random = [] }, Cmd.none )
 
 
-addTask : (Task, Int) -> TaskList -> TaskList
-addTask (task, depOf) list =
-    Dict.update depOf ( Maybe.map (\x -> Task x.id x.text x.delay task.id) ) <| Dict.insert task.id task list
+addTask : ( Task, Int ) -> TaskList -> TaskList
+addTask ( task, depOf ) list =
+    Dict.update depOf (Maybe.map (\x -> Task x.id x.text x.delay task.id)) <| Dict.insert task.id task list
 
 
 type alias Task =
-    { id : Int, text : String, delay : Int, dependency: Int }
+    { id : Int, text : String, delay : Int, dependency : Int }
 
 
 type alias TaskList =
     Dict Int Task
 
-mkTask : Int -> String -> Int -> (Task, Int)
-mkTask id text delay = case String.split "#" text of
-    [words, dep] ->
-        (Task id words delay 0, (withDefault 0 <| toInt dep))
-    _ ->
-        (Task id text delay 0, 0)
+
+mkTask : Int -> String -> Int -> ( Task, Int )
+mkTask id text delay =
+    case String.split "#" text of
+        [ words, dep ] ->
+            ( Task id words delay 0, withDefault 0 <| toInt dep )
+
+        _ ->
+            ( Task id text delay 0, 0 )
+
+
 
 ---- UPDATE ----
 
@@ -59,7 +64,10 @@ type Msg
     | Randomize (List Int)
     | GoRandom
 
-withoutDependency = Dict.filter (\_ task -> task.dependency == 0)
+
+withoutDependency =
+    Dict.filter (\_ task -> task.dependency == 0)
+
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
@@ -69,9 +77,10 @@ update msg model =
 
         AddTask ->
             if model.adding == "" then
-                (model, Cmd.none)
+                ( model, Cmd.none )
+
             else
-                ( { model | tasks = addTask (mkTask (model.lastID + 1) model.adding 0 ) model.tasks, lastID = model.lastID + 1, adding = "" }, Cmd.none )
+                ( { model | tasks = addTask (mkTask (model.lastID + 1) model.adding 0) model.tasks, lastID = model.lastID + 1, adding = "" }, Cmd.none )
 
         CompleteTask id ->
             let
@@ -157,9 +166,11 @@ taskView : Int -> Task -> List (Element Msg) -> List (Element Msg)
 taskView _ task html =
     el [ onClick (CompleteTask task.id) ] (text <| fromInt task.delay ++ " " ++ task.text) :: html
 
+
 ghostView : Int -> Task -> List (Element Msg) -> List (Element Msg)
 ghostView _ task html =
     el [ onClick (CompleteTask task.id) ] (text <| "ID: " ++ fromInt task.id ++ " " ++ fromInt task.delay ++ " " ++ task.text) :: html
+
 
 
 ---- PROGRAM ----
