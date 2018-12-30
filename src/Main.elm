@@ -81,7 +81,7 @@ update msg model =
                 procrastinate _ task =
                     Task task.id task.text (task.delay + 1)
             in
-            ( { model | tasks = tasks }, Random.generate Randomize <| Random.list 3 <| Random.int 0 <| Dict.size tasks - 1 )
+            ( { model | tasks = tasks }, Random.generate Randomize <| Random.list 10 <| Random.int 0 <| Dict.size tasks - 1 )
 
         GoRandom ->
             ( model, Random.generate Randomize <| Random.list 10 <| Random.int 0 <| Dict.size model.tasks - 1 )
@@ -92,7 +92,7 @@ update msg model =
                     getRandomIds <| Debug.log "ids" <| Array.fromList <| Dict.keys model.tasks
 
                 getRandomIds ids =
-                    catMaybes <| List.map (\i -> Array.get i ids) (unique arr)
+                    catMaybes <| List.map (\i -> Array.get i ids) (take 3 <| unique arr)
             in
             ( { model | random = random }, Cmd.none )
 
