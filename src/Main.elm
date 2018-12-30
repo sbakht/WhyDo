@@ -89,7 +89,7 @@ update msg model =
         Randomize arr ->
             let
                 random =
-                    getRandomIds <| Debug.log "ids" <| Array.fromList <| Dict.keys model.tasks
+                    getRandomIds <| Array.fromList <| Dict.keys model.tasks
 
                 getRandomIds ids =
                     catMaybes <| List.map (\i -> Array.get i ids) (take 3 <| unique arr)
